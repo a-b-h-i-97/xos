@@ -14,6 +14,8 @@ load (25,21);
 load (26,22);
 load (27,23);
 
+load (29,27);
+
 PTBR = PAGE_TABLE;
 PTLR = 4;
 [PTBR + 0] = 25;
@@ -28,8 +30,30 @@ PTLR = 4;
 [READY_LIST + 1] = 2;
 
 SP = 3*512;
-
 [28 * 512] = 0;
+
+[READY_LIST + 32] = 1;
+
+alias PTBR_P1 S0;
+PTBR_P1 = 1024 + 1 * 8; 
+
+[PTBR_P1 + 0] = 29;
+[PTBR_P1 + 1] = "01";
+[PTBR_P1 + 2] = -1;
+[PTBR_P1 + 3] = "00";
+[PTBR_P1 + 4] = -1;
+[PTBR_P1 + 5] = "00";
+[PTBR_P1 + 6] = 30;
+[PTBR_P1 + 7] = "01";
+
+[READY_LIST + 33] = 1;
+[READY_LIST + 37] = PTBR_P1;
+[READY_LIST + 38] = 4;
+
+[READY_LIST + 34] = 3 * 512;         //BP
+[READY_LIST + 35] = 3 * 512;         //SP
+[READY_LIST + 36] = 0;               //IP
+
 
 ireturn;
 
