@@ -1,2 +1,97 @@
-print "in INT 1";
-ireturn;
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias arg1 S2;
+arg1 = [physicalSP - 3];
+
+alias i S15;
+i = 0;
+
+alias file S3;
+
+alias free_block S4;
+free_block = -1;
+
+alias free_FAT S5;
+free_FAT = -1;
+
+if (sysCallNo == 1) then
+
+	while (i < 64) do
+	
+		file = [FAT + 8 * i];
+		if(file == arg1) then
+			[physicalSP - 2] = 0;                   //Success return value file already exists
+			ireturn;
+		endif;
+		i = i+1;
+
+	endwhile;
+
+	i = 0;
+	while(i <= 447) do
+
+		if( [DISK_LIST + i] == 0) then
+			free_block = i;
+			break;
+		endif;
+		i = i+1;
+	endwhile;
+
+	if(free_block == -1) then
+
+		[physicalSP - 2] = -1;                      //Failure return value; no free block in disk
+		ireturn;
+	endif;
+
+
+	i = 0;
+	while(i < 64) do
+
+		if( [FAT + (8 * i) + 2] == -1) then
+			free_FAT  = i;
+			break;
+		endif;
+		i = i+1;
+
+	endwhile;
+
+	if(free_FAT == -1) then
+		[physicalSP - 2] = -1;                      //Failure return value; no free FAT entry
+		ireturn;
+	endif;
+
+	[FAT + 8 * free_FAT] = arg1;                    //Add filename to FAT entry
+	[FAT + 8 * free_FAT + 1] = 0;                   //size in FAT entry initialized to 0
+	[FAT + 8 * free_FAT + 2] = free_block;          //add basic block to FAT entry
+
+	[DISK_LIST + free_block] = 1;                   //updating disk free list
+
+
+	load (1,free_block);                            //Load basic block to memory
+	i = SCRATCHPAD;
+
+	while(i < SCRATCHPAD + 512) do
+		[i] = -1;                                   // Witing -1 to all words in page 1
+		i = i+1;
+	endwhile;
+
+	store (1,free_block);                           // Write back basic block to disk
+	store (5,19);                                   // Write back FAT
+	store (6,20);                                   // Write back Disk Free List
+
+
+	[physicalSP - 2] = 0;                           // Success return value
+	ireturn;
+
+endif;
+
+
+
+
+
+	
+	
