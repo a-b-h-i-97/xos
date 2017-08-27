@@ -1,0 +1,104 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias file_name S2;
+file_name = [physicalSP - 3];
+
+alias file S3;
+
+alias fat_ind S4;
+alias swoft_ind S5;
+
+alias currentPID S6;
+currentPID = (PTBR - 1024) / 8;
+
+alias currentPCB S7;
+currentPCB = READY_LIST + 32 * currentPID;
+
+
+alias i S15;
+i = 0;
+
+alias flag S14;
+flag = 0;
+
+alias flag2 S13;
+flag2 = -1;
+
+if (sysCallNo == 2) then
+	
+	while (i < 64) do
+	
+		file = [FAT + 8 * i];
+		if(file == file_name) then
+			flag = 1;
+			fat_ind = i;
+			break;
+		endif;
+		i = i+1;
+
+	endwhile;
+
+	if(flag == 0) then
+		[physicalSP - 2] = -1;                // File does not exist in FAT
+		print "FAT does not exist";
+		ireturn;
+	endif;
+
+	i = 0;
+	flag = 0;
+
+	while (i < 64) do
+
+		file = [FILE_TABLE + 2 * i];
+		if(file == fat_ind) then
+			flag = 1;
+			swoft_ind = i;
+			break;
+		endif;
+
+		if(file == -1 && flag2 == -1) then
+			flag2 = i;
+		endif;
+
+		i = i+1;
+	endwhile;
+
+	if(flag == 0) then
+		swoft_ind = flag2;
+	endif;
+
+	i = 0;
+	flag = 0;
+
+	while (i < 8) do
+
+		if([currentPCB + 15 + 2*i] == -1) then
+			flag = 1;
+			flag2 = i;
+			break;
+		endif;
+
+		i = i+1;
+	endwhile;
+
+	if(flag == 0) then
+		[physicalSP - 2] = -1;                // No free per-process entry
+		print "no per-process entry";
+		ireturn;
+	endif;
+
+	[currentPCB + 15 + 2*flag2] = swoft_ind;        //setting the per-process file table entry
+	[currentPCB + 15 + 2*flag2 + 1] = 0;
+
+
+	[FILE_TABLE + 2*swoft_ind + 1] = [FILE_TABLE + 2*swoft_ind + 1] + 1;
+
+	[physicalSP - 2] = flag2;
+
+	ireturn;
+
+endif;

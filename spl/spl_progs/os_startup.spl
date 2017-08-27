@@ -10,14 +10,49 @@ load (10,4);
 load (11,5);              //Loading Interrupt 1 routine          
 load (12,6);
 
+load (13,7);			  //Loading Interrupt 2 routine
+load (14,8);
+
+load (15,9);              //Loading Interrupt 3 routine
+load (16,10);
+
+load (17,11);             //Loading Interrupt 4 routine
+load (18,12);
+
 load (23,17);             //Loading INterrupt 7 routine
 load (24,18);
 
-[READY_LIST + 0] = 0;
+
+// Setting up System Wide Open File Table
+
+alias counter S0;			
+counter = 0;
+while ( counter <  128) do			// 64 entries, each of size 2 words
+	[ FILE_TABLE + counter + 0] = -1;	// Set FAT Index to -1
+	[ FILE_TABLE + counter + 1] =  0;	// Set File Open Count to 0
+	counter = counter + 2;			// Move to next entry
+endwhile;
+
+
 
 load (25,21);             //Loading code blocks for init
 load (26,22);
 load (27,23);
+
+
+
+[READY_LIST + 0] = 0;     // PID for init is zero
+
+//Setting up per-process file table for init
+
+counter = 15;
+
+while (counter <= 30) do
+	[READY_LIST + counter] = -1;
+	counter = counter + 1;
+endwhile;
+
+
 
 PTBR = PAGE_TABLE;        //Setting up page tables for init
 PTLR = 4;
@@ -30,7 +65,7 @@ PTLR = 4;
 [PTBR + 6] = 28;
 [PTBR + 7] = "01";
 
-[READY_LIST + 1] = 2;
+[READY_LIST + 1] = 2;    //Set state of init to running
 
 SP = 3*512;
 
