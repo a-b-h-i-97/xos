@@ -1,0 +1,124 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias arg2 S2;                   //word to write 
+arg2 = [physicalSP - 3];
+
+alias arg1 S3;                   //file desc              
+arg1 = [physicalSP - 4];
+
+alias currentPID S4;
+currentPID = (PTBR - 1024) / 8;
+
+alias currentPCB S5;
+currentPCB = READY_LIST + 32 * currentPID;
+
+alias swoft_ind S6;
+alias Lpos S7;
+
+alias fat_ind S8;
+alias b_block S9;
+
+alias i S15;
+i = 0;
+
+alias j S14;
+j = 0;
+
+alias flag S13;
+flag = 0;
+
+if(sysCallNo == 5) then
+
+	if(arg1 < 0 || arg1 > 7) then
+		[physicalSP - 2] = -1;                  //invalid file_desc
+		print "invalid file_desc";
+		ireturn;
+	endif;
+
+	swoft_ind = [currentPCB + 15 + 2*arg1];
+
+	if(swoft_ind == -1) then
+		[physicalSP - 2] = -1;                  //invalid ppfte
+		print "invalid ppfte";
+		ireturn;
+	endif;
+
+	Lpos = [currentPCB + 16 + 2*arg1];
+
+	fat_ind = [FILE_TABLE + 2*swoft_ind];
+
+	b_block = [FAT + 8*fat_ind + 2];
+
+	load(1,b_block);
+
+	j = Lpos/512;
+
+	if([SCRATCHPAD + j] == -1) then
+		flag = 0;
+		i = 24;
+
+		while(i <= 447) do
+			if([DISK_LIST + i] == 0) then
+				flag = 1;
+				break;
+				[DISK_LIST + i] = 1;
+			endif;
+		    i = i+1;
+		endwhile;
+
+		if(flag == 0) then
+			[physicalSP - 2] = -1;                  //n free disk block
+			print "no block";
+			ireturn;
+		endif;
+
+		// Now i would contain the current block number
+
+		[SCRATCHPAD + j] = i;
+
+		store(1,b_block);                           //store back the basic block
+
+		[FAT + 8*fat_ind + 1] = [FAT + 8*fat_ind + 1] + 512;
+
+		store(5,19);                                // write back FAT and DF
+		store(6,20);
+
+	else
+		i = [SCRATCHPAD + j];
+
+	endif;
+
+	// Now i would contain the current block number
+
+	load (1,i);
+
+	j = Lpos%512;
+
+	[SCRATCHPAD + j] = arg2;
+
+	store (1,i);
+
+	[currentPCB + 16 + 2*arg1] = Lpos + 1;
+
+	[physicalSP - 2] = 0;
+    ireturn;
+
+endif;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
