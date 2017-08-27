@@ -4,14 +4,12 @@ decl
 enddecl
 integer main()
 {
-	breakpoint;
 
-	a = Open("myfile.dat");
-	breakpoint;
-	b = Write(a,"hello!");
-	breakpoint;
-	print (b);
 
+	a = Delete("myfile.dat");
+	print(a);
+	breakpoint;
+	
 
 	return 0;
 }

@@ -64,8 +64,9 @@ if(sysCallNo == 5) then
 		while(i <= 447) do
 			if([DISK_LIST + i] == 0) then
 				flag = 1;
-				break;
 				[DISK_LIST + i] = 1;
+				break;
+				
 			endif;
 		    i = i+1;
 		endwhile;
