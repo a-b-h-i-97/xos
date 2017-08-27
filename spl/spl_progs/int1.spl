@@ -7,9 +7,6 @@ sysCallNo = [physicalSP - 1];
 alias arg1 S2;
 arg1 = [physicalSP - 3];
 
-alias i S15;
-i = 0;
-
 alias file S3;
 
 alias free_block S4;
@@ -17,6 +14,24 @@ free_block = -1;
 
 alias free_FAT S5;
 free_FAT = -1;
+
+alias fat_ind S6;
+alias b_block S7;
+
+alias i S15;
+i = 0;
+
+alias flag S14;
+flag = 0;
+
+alias j S13;
+j = 0;
+
+alias k S12;
+j = 0;
+
+
+
 
 if (sysCallNo == 1) then
 
@@ -90,7 +105,106 @@ if (sysCallNo == 1) then
 endif;
 
 
+if (sysCallNo == 4) then
 
+	i = 0;
+	flag = 0;
+
+	while (i < 64) do
+	
+		file = [FAT + 8 * i];
+		if(file == arg1) then
+			fat_ind = i;
+			flag = 1;
+			break;
+		endif;
+		i = i+1;
+
+	endwhile;
+
+	if (flag == 0) then
+		[physicalSP - 2] = -1;                        //File does not exist
+		print "no file";
+		ireturn;
+	endif;
+
+	i = 0;
+	flag = 0;
+
+	while (i < 64) do                                 //searching the swoft
+
+		if([FILE_TABLE + 2*i] == fat_ind) then
+			flag = 1;
+			break;
+		endif;
+		i = i+1;
+	endwhile;
+
+	if(flag == 1) then
+		[physicalSP - 2] = -1;                        //File is open
+		print "open file";
+		ireturn;
+	endif;
+
+	b_block = [FAT + 8 * fat_ind + 2];
+	
+	if (b_block == -1) then
+		[physicalSP - 2] = -1;                        //b_block =-1
+		print "invalid b_block";
+		ireturn;
+	endif;
+	
+	i = 0;
+	while(i < 256) do
+
+		load (1,b_block);                            //1 is SCRATCHPAD/512
+
+		j = [SCRATCHPAD + i];
+
+		if (j >= 24 && j <= 447) then
+
+			load (1,j);                              //loading ith data block
+			k = 0;
+
+			while (k < 512) do
+
+				[SCRATCHPAD + k] = "";
+				k = k+1;
+
+			endwhile;
+
+			store(1,j);                             //storing back the ith data block
+			[DISK_LIST + j] = 0;                    //updating df list
+
+		endif;
+
+		i = i + 1;
+
+	endwhile;
+
+	i = 0;
+	load (1,b_block);
+
+	while(i < 256) do
+		[SCRATCHPAD + i] = "";
+		i = i+1;
+	endwhile;
+
+	store(1,b_block);
+	[DISK_LIST + b_block] = 0;
+	
+	store(6,20);                                     //storing back DF
+
+	[FAT + 8*fat_ind] = -1;                          //set the filename and basic block to -1  
+	[FAT + 8*fat_ind + 2] = -1;                               
+
+	store(5,19);                                     //storing back FAT
+
+	[physicalSP - 2] = 0;
+
+	ireturn;
+
+endif;
 
 
 	

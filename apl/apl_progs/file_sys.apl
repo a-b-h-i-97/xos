@@ -4,13 +4,22 @@ decl
 enddecl
 integer main()
 {
-	a = Open("sample.dat");
-	a = Open("sample.dat");
-	a = Open("sample.dat");
-	b = Close(1);
-	a = Open("even.xsm");
+	breakpoint;
+	a = Create("myfile.dat");
 	print(a);
+	breakpoint;
+
+	a = Open("myfile.dat");
+	print(a);
+	breakpoint;
+
+	b = Delete("myfile.dat");
 	print(b);
 	breakpoint;
+
+	b = Close(a);
+	print(b);
+	breakpoint;
+
 	return 0;
 }
