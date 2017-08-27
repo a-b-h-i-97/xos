@@ -1,18 +1,16 @@
 decl
-	integer status;
+	integer a;
+	integer b;
 enddecl
 integer main()
 {
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-	status = Open("even.xsm");
-
-	print(status);
+	a = Open("sample.dat");
+	a = Open("sample.dat");
+	a = Open("sample.dat");
+	b = Close(1);
+	a = Open("even.xsm");
+	print(a);
+	print(b);
+	breakpoint;
 	return 0;
 }
