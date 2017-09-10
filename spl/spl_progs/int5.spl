@@ -1,0 +1,209 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias currentPID S2;
+currentPID = (PTBR - 1024) / 8;
+
+alias PCBi S3;
+
+alias i S15;
+
+alias j S14;
+j = 0;
+
+alias flag S13;
+flag = 0;
+
+alias vpcount S12;
+
+
+alias k S11;
+k = 0;
+
+alias l S10;
+l = 0;
+
+
+if(sysCallNo == 8) then
+
+	i = 0;
+	PCBi = -1;
+	vpcount = 0;
+
+	while(i < 32) do
+		
+		if( [READY_LIST + i * 32 + 1] == 0) then
+		
+			PCBi = i;
+			break;
+		endif;
+
+	i = i + 1;
+	endwhile;
+
+
+	if(PCBi == -1) then
+
+		[physicalSP - 2] = -1;                  //no free PCB
+		print "no free PCB";
+		ireturn;
+	endif;
+
+	[READY_LIST + PCBi * 32] = PCBi;            // set PID of child process
+
+
+	if ( [PTBR + 1] == "01" || [PTBR + 1] == "11" ) then
+		vpcount = vpcount + 1;
+	endif;
+
+	if ( [PTBR + 3] == "01" || [PTBR + 3] == "11") then
+		vpcount = vpcount + 1;
+	endif;
+
+	if ( [PTBR + 5] == "01" || [PTBR + 5] == "11") then
+		vpcount = vpcount + 1;
+	endif;
+
+	if ( [PTBR + 7] == "01" || [PTBR + 7] == "11") then
+		vpcount = vpcount + 1;
+	endif;
+
+
+	i = 29;
+	j = 0;
+
+	while(i < 64) do
+
+		if([MEM_LIST + i] == 0) then
+			j = j + 1;
+		endif;
+
+		if(j >= vpcount) then
+			flag = 1;
+			break;
+		endif;
+
+		i = i + 1;
+	endwhile;
+
+	if(flag == 0) then 
+
+		[physicalSP - 2] = -1;                  //no free pages for child
+		print "no free Pages";
+		ireturn;
+	endif;
+
+
+	alias childPTBR S4;
+	childPTBR = PAGE_TABLE + 8 * PCBi;
+
+	alias childPCB S5;
+	childPCB = READY_LIST + 32 * PCBi;
+
+	alias currentPCB S6;
+	currentPCB = READY_LIST + 32 * currentPID;
+
+	alias pgnum S7;
+
+	i = 0;
+
+	while (i < 4) do
+
+		[childPTBR + 2 * i] = [PTBR + 2 * i];
+		[childPTBR + 2 * i + 1] = [PTBR + 2 * i + 1]; 
+
+		if( [PTBR + 2 * i + 1] == "01" || [PTBR + 2 * i + 1] == "11" ) then
+
+			j = 29;
+			flag = 0;
+	
+			while(j < 64 && flag == 0) do
+	
+				if( [MEM_LIST + j] == 0) then
+	
+					[MEM_LIST + j] = 1;           // mark the page as used
+
+					[childPTBR + 2 * i] = j;      // assigning the physical page numbers of child process to its page table
+					
+					k = 0;
+					pgnum = [PTBR + 2 * i] * 512;        
+					
+					while (k < 512) do
+					
+						[512 * j + k] = [pgnum + k];
+						k = k+1;
+					endwhile;
+
+					flag = 1;
+				endif;
+			
+			j = j+1;
+			endwhile;
+
+		endif;
+
+		i = i+1;
+	endwhile;
+
+
+	// Populating PCB of child process
+
+	[childPCB + 2] = BP;
+	[childPCB + 3] = SP - 1;                     // setiting SP for child process
+	[childPCB + 4] = [physicalSP];                // copying logical IP from top of the stack
+	[childPCB + 5] = childPTBR;                  // copying PTBR from parent PCB
+	[childPCB + 6] = PTLR;
+	[childPCB + 7] = R0;
+	[childPCB + 8] = R1;
+	[childPCB + 9] = R2;
+	[childPCB + 10] = R3;
+	[childPCB + 11] = R4;
+	[childPCB + 12] = R5;
+	[childPCB + 13] = R6;
+	[childPCB + 14] = R7;
+
+	i = 0;
+
+	while (i < 8) do
+
+		[childPCB + 15 + 2*i] = [currentPCB + 15 + 2*i];
+		[childPCB + 16 + 2*i] = [currentPCB + 16 + 2*i];
+
+		j = [childPCB + 15 + 2*i];
+
+		if(j != -1) then
+
+			[FILE_TABLE + 2*j + 1] = [FILE_TABLE + 2*j + 1] + 1;        //incrementing file count
+
+		endif;
+
+		i = i+1;
+	endwhile;
+
+	[childPCB + 1] = 1;            // child is ready
+
+	[physicalSP - 2] = 0;                  // success
+		
+	i = SP - 1;        // i is SP of child
+	j = ([childPTBR + 2 * (i / 512)] * 512) + (i % 512);         // calculating physicalSP of child
+
+	[j-1] = -2;        // Setting return value  of child = -2
+
+	ireturn;
+
+endif;
+		
+
+
+
+
+
+
+
+
+
+
+	

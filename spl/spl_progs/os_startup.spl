@@ -19,6 +19,12 @@ load (16,10);
 load (17,11);             //Loading Interrupt 4 routine
 load (18,12);
 
+load (19,13);             //Loading Interrupt 5 routine
+load (20,14);
+
+load (21,15);             //Loading Interrupt 6 routine
+load (22,16);
+
 load (23,17);             //Loading INterrupt 7 routine
 load (24,18);
 
@@ -34,6 +40,30 @@ while ( counter <  128) do			// 64 entries, each of size 2 words
 endwhile;
 
 
+// Setting up Memory Free List
+
+counter = 0;
+
+while (counter <= 28) do                // 28 pages including pages for INIT
+	[MEM_LIST + counter] = 1;
+	counter = counter + 1;
+endwhile;
+
+while (counter < 64) do
+	[MEM_LIST + counter] = 0;
+	counter = counter + 1;
+endwhile;
+
+
+
+// Setting all PCB states to 0
+
+counter = 0;
+
+while (counter < 32) do
+	[READY_LIST + counter * 32 + 1] = 0;
+	counter = counter + 1;
+endwhile;
 
 load (25,21);             //Loading code blocks for init
 load (26,22);
@@ -70,5 +100,6 @@ PTLR = 4;
 SP = 3*512;
 
 [28 * 512] = 0;
+
 
 ireturn;
