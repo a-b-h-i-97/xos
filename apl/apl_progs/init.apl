@@ -1,10 +1,9 @@
 integer main()
 {
-	integer a,b;
-
-	b = Open("myfile.dat");
-	b = Open("even.xsm");
-	a = Exec ("even.xsm");
-	print ("exiting");
+	integer pid,a;
+	print ("Before Fork");
+	a = Open("myfile.dat");
+	pid = Fork();
+	print ("After Fork");
 	return 0;
 }

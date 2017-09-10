@@ -1,0 +1,144 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias currPID S2;
+currPID = (PTBR - PAGE_TABLE) / 8;
+
+
+alias currPCB S3;
+currPCB = READY_LIST + 32 * currPID;
+
+alias newPID S4;
+alias newPCB S5;
+
+alias swoft_ind S6;
+
+alias i S15;
+
+
+alias j S14;
+j = 0;
+
+alias flag S13;
+flag = 0;
+
+
+if(sysCallNo == 10) then
+
+	newPID = currPID;
+	i = 0;
+
+	while (i < 32) do
+		newPID = newPID + 1;
+		if(newPID == 32) then
+			newPID = 0;
+		endif;
+	
+		newPCB = READY_LIST + 32 * newPID;
+		if( [newPCB + 1] == 1) then 
+			flag = 1;
+			break;
+		endif;
+
+		i = i+1;
+	
+	endwhile;
+
+	//breakpoint;
+
+	if (flag == 0) then
+
+		//print "last exit";
+		halt;
+	endif;
+
+
+ 	i = 0;
+
+	while (i < 8) do
+
+		swoft_ind = currPCB + 15 + 2*i;
+
+		if ([swoft_ind] != -1) then
+
+			j = FILE_TABLE + 2 * [swoft_ind] + 1;  // decrementing file count
+			[j] = [j] - 1;
+
+			if ([j] == 0) then                     // if file open count is 0 entry is invalid
+				[j - 1] = -1;
+			endif;
+
+			[swoft_ind] = -1;
+			[swoft_ind + 1] = -1;
+		endif;
+
+	    i = i+1;
+
+	endwhile;
+
+	//breakpoint;
+
+	[currPCB + 1] = 0;                             // current process is terminated
+
+
+
+	if ( [PTBR + 1] == "01" || [PTBR + 1] == "11" ) then
+		[PTBR + 1] = "00";
+		[MEM_LIST + [PTBR]] = 0;
+		[PTBR] = -1;
+	endif;
+
+	if ( [PTBR + 3] == "01" || [PTBR + 3] == "11") then
+		[PTBR + 3] = "00";
+		[MEM_LIST + [PTBR + 2]] = 0;
+		[PTBR + 2] = -1;
+	endif;
+
+	if ( [PTBR + 5] == "01" || [PTBR + 5] == "11") then
+		[PTBR + 5] = "00";
+		[MEM_LIST + [PTBR + 4]] = 0;
+		[PTBR + 4] = -1;
+	endif;
+
+	if ( [PTBR + 7] == "01" || [PTBR + 7] == "11") then
+		[PTBR + 7] = "00";
+		[MEM_LIST + [PTBR + 6]] = 0;
+		[PTBR + 6] = -1;		
+	endif;
+
+	//breakpoint;
+
+
+	R0 = [newPCB + 7];
+	R1 = [newPCB + 8];
+	R2 = [newPCB + 9];
+	R3 = [newPCB + 10];
+	R4 = [newPCB + 11];
+	R5 = [newPCB + 12];
+	R6 = [newPCB + 13];
+	R7 = [newPCB + 14];
+	
+	BP = [newPCB + 2];
+	SP = [newPCB + 3];
+	
+	PTBR = [newPCB + 5];
+	PTLR = [newPCB + 6];
+
+	SP = SP + 1;
+	
+	alias newphysicalSP S10;
+	newphysicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[ newphysicalSP ] = [ newPCB + 4 ];
+	
+	[newPCB + 1] = 2;                    //set the process as running
+
+	//breakpoint;
+	
+	ireturn;
+
+endif;
+
+
