@@ -9,6 +9,14 @@ currentPID = (PTBR - 1024) / 8;
 
 alias PCBi S3;
 
+alias childPTBR S4;
+alias childPCB S5;
+alias currentPCB S6;
+
+alias currentStack S7;
+
+
+
 alias i S15;
 
 alias j S14;
@@ -55,98 +63,77 @@ if(sysCallNo == 8) then
 	[READY_LIST + PCBi * 32] = PCBi;            // set PID of child process
 
 
-	if ( [PTBR + 1] == "01" || [PTBR + 1] == "11" ) then
-		vpcount = vpcount + 1;
-	endif;
-
-	if ( [PTBR + 3] == "01" || [PTBR + 3] == "11") then
-		vpcount = vpcount + 1;
-	endif;
-
-	if ( [PTBR + 5] == "01" || [PTBR + 5] == "11") then
-		vpcount = vpcount + 1;
-	endif;
-
-	if ( [PTBR + 7] == "01" || [PTBR + 7] == "11") then
-		vpcount = vpcount + 1;
-	endif;
+	
 
 
-	i = 29;
-	j = 0;
+	i = 25;
+	flag = -1;
 
 	while(i < 64) do
 
 		if([MEM_LIST + i] == 0) then
-			j = j + 1;
-		endif;
-
-		if(j >= vpcount) then
-			flag = 1;
-			break;
+			flag = i;
+			break;		
 		endif;
 
 		i = i + 1;
 	endwhile;
 
-	if(flag == 0) then 
+	if(flag == -1) then 
 
-		[physicalSP - 2] = -1;                  //no free pages for child
-		print "no free Pages";
+		[physicalSP - 2] = -1;                  //no free pages for child stack
+		print "no free Page for stack";
 		ireturn;
 	endif;
 
 
-	alias childPTBR S4;
-	childPTBR = PAGE_TABLE + 8 * PCBi;
-
-	alias childPCB S5;
-	childPCB = READY_LIST + 32 * PCBi;
-
-	alias currentPCB S6;
+	
+	childPTBR = PAGE_TABLE + 8 * PCBi;	
+	childPCB = READY_LIST + 32 * PCBi;	
 	currentPCB = READY_LIST + 32 * currentPID;
 
-	alias pgnum S7;
+	currentStack = [PTBR + 6];               // storing current stack page 
+
+
+
+	[MEM_LIST + flag] = 1;                    //setting the new page as used
+
+
+	i = 0;                                    //copying stack word by word
+	while (i < 512) do
+		[flag * 512 + i] = [currentStack * 512 + i];
+		i = i+1;
+	endwhile;
+
+	[childPTBR + 6] = flag;                   // Setting child page table for stack
+	[childPTBR + 7] = "01";
+
 
 	i = 0;
 
-	while (i < 4) do
+	while (i < 6) do
 
-		[childPTBR + 2 * i] = [PTBR + 2 * i];
-		[childPTBR + 2 * i + 1] = [PTBR + 2 * i + 1]; 
+		j = i + 1;
 
-		if( [PTBR + 2 * i + 1] == "01" || [PTBR + 2 * i + 1] == "11" ) then
-
-			j = 29;
-			flag = 0;
+		[childPTBR + i] = [PTBR + i];
+		[childPTBR + j] = [PTBR + j];
 	
-			while(j < 64 && flag == 0) do
+		if ([PTBR + j] == "01" || [PTBR + j] == "11") then            // if a valid page
 	
-				if( [MEM_LIST + j] == 0) then
+			[MEM_LIST + [PTBR + i]] = [MEM_LIST + [PTBR + i]] + 1;     //incrementing MEM_LIST value
 	
-					[MEM_LIST + j] = 1;           // mark the page as used
-
-					[childPTBR + 2 * i] = j;      // assigning the physical page numbers of child process to its page table
-					
-					k = 0;
-					pgnum = [PTBR + 2 * i] * 512;        
-					
-					while (k < 512) do
-					
-						[512 * j + k] = [pgnum + k];
-						k = k+1;
-					endwhile;
-
-					flag = 1;
-				endif;
-			
-			j = j+1;
-			endwhile;
+		else
+			if ([PTBR + i] >= 448) then                                    //if in swap area
+				[DISK_LIST + [PTBR + i]] = [DISK_LIST + [PTBR + i]] + 1;   //incrementing DISK_LIST value
+			endif;
 
 		endif;
 
-		i = i+1;
+		i = i + 2;
+
 	endwhile;
+
+	store (6,20);                               //committing back DF list
 
 
 	// Populating PCB of child process

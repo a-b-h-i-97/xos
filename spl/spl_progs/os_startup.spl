@@ -40,11 +40,11 @@ while ( counter <  128) do			// 64 entries, each of size 2 words
 endwhile;
 
 
-// Setting up Memory Free List
+// Setting up Memory Free List using pages upto 24
 
 counter = 0;
 
-while (counter <= 28) do                // 28 pages including pages for INIT
+while (counter <= 24) do                
 	[MEM_LIST + counter] = 1;
 	counter = counter + 1;
 endwhile;
@@ -65,13 +65,18 @@ while (counter < 32) do
 	counter = counter + 1;
 endwhile;
 
-load (25,21);             //Loading code blocks for init
-load (26,22);
-load (27,23);
+
+// Marking SWAP area as unused in DISK_LIST
+
+counter = 448;
+while (counter < 512) do
+	[DISK_LIST + counter] = 0;
+	counter = counter + 1;
+endwhile;
+
+store (6,20);          //commiting disk free list back to the disk
 
 
-
-[READY_LIST + 0] = 0;     // PID for init is zero
 
 //Setting up per-process file table for init
 
@@ -83,23 +88,26 @@ while (counter <= 30) do
 endwhile;
 
 
+[READY_LIST + 0] = 0;     // PID for init is zero
 
 PTBR = PAGE_TABLE;        //Setting up page tables for init
 PTLR = 4;
-[PTBR + 0] = 25;
-[PTBR + 1] = "01";
-[PTBR + 2] = 26;
-[PTBR + 3] = "01";
-[PTBR + 4] = 27;
-[PTBR + 5] = "01";
-[PTBR + 6] = 28;
+[PTBR + 0] = 21;          //21,22 and 23 are code blocks for init in disk
+[PTBR + 1] = "00";
+[PTBR + 2] = 22;
+[PTBR + 3] = "00";
+[PTBR + 4] = 23;
+[PTBR + 5] = "00";
+[PTBR + 6] = 25;          //assigning page 25 for init stack
 [PTBR + 7] = "01";
+
+[MEM_LIST + 25] = 1;     //marking page 25 as used
 
 [READY_LIST + 1] = 2;    //Set state of init to running
 
 SP = 3*512;
 
-[28 * 512] = 0;
+[25 * 512] = 0;          //Placing 0 in the top of the stack
 
 
 ireturn;

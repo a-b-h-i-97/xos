@@ -64,104 +64,55 @@ if( sysCallNo == 9) then
 	load (1,b_block);
 
 	i = 0;
-	new_blocks = 0;
+	
+	while (i < 6) do                            // Freeing pages used by old process
 
-	while(i < 3) do
+		j = i + 1;
 
-		if( [SCRATCHPAD + i] != -1) then
-			new_blocks = new_blocks + 1;
+		if ([PTBR + j] == "01" || [PTBR + j] == "11") then            // if a valid page
+	
+			[MEM_LIST + [PTBR + i]] = [MEM_LIST + [PTBR + i]] - 1;     //decrementing MEM_LIST value
+	
+		else
+			if ([PTBR + i] >= 448) then                                    //if in swap area
+				[DISK_LIST + [PTBR + i]] = [DISK_LIST + [PTBR + i]] - 1;   //decrementing DISK_LIST value
+			endif;
+
 		endif;
 
-		i = i+1;
+		i = i + 2;
 
 	endwhile;
 
-	curr_blocks = 0;
+	store (6,20);                               //committing back DF list
 
-
-	if ( [PTBR + 1] == "01" || [PTBR + 1] == "11" ) then
-		curr_blocks = curr_blocks + 1;
-	endif;
-
-	if ( [PTBR + 3] == "01" || [PTBR + 3] == "11") then
-		curr_blocks = curr_blocks + 1;
-	endif;
-
-	if ( [PTBR + 5] == "01" || [PTBR + 5] == "11") then
-		curr_blocks = curr_blocks + 1;
-	endif;
-
-
-	i = 29;
-	j = 0;
-	flag = 0;
-
-	while(i < 64) do
-
-		if([MEM_LIST + i] == 0) then
-			j = j + 1;
-		endif;
-
-		if(j >= (new_blocks - curr_blocks) ) then
-			flag = 1;
-			break;
-		endif;
-
-		i = i + 1;
-	endwhile;
-
-	if(flag == 0) then 
-
-		[physicalSP - 2] = -1;                  //no free pages for child
-		print "no free Pages";
-		ireturn;
-	endif;
-
-
-	//breakpoint;
-
-
-
-	[PTBR + 1] = "00";                       //setting all page table entries invalid except stack
-	[PTBR + 3] = "00";
-	[PTBR + 5] = "00";
-	
-
-	[MEM_LIST + [PTBR]] = 0;                  // setting all the pages as free except stack
-	[MEM_LIST + [PTBR + 2]] = 0;
-	[MEM_LIST + [PTBR + 4]] = 0;
-	
 
 	//breakpoint;
 
 
 	i = 0;
 	
-	while (i < new_blocks) do
+	while (i < 3) do                          //Setting up page tables for new process
 
-		j = 24;
-	    flag = 0;
-
-	    while(j < 64 && flag == 0) do
-	
-			if( [MEM_LIST + j] == 0) then
-
-				[MEM_LIST + j] = 1;                //setting the df of as 1
-
-				[PTBR + 2*i] = j;                  //updating page table entry
-				[PTBR + 2*i + 1] = "01";
-
-				load(j,[SCRATCHPAD + i]);
-
-				flag = 1;
-			endif;
-
-			j = j+1;
-		endwhile;
+		if([SCRATCHPAD + i] != -1) then
+			[PTBR + 2*i] = [SCRATCHPAD + i];
+			[PTBR + 2*i + 1] = "00";
+		else
+			break;
+		endif;
 
 		i = i+1;
 
 	endwhile;
+
+	while (i < 3) do                          //Setting the remaining page table entries to -1
+		[PTBR + 2*i] = -1;
+		[PTBR + 2*i + 1] = "00";
+		i = i+1;
+	endwhile;
+
+	[PTBR + 7] = "01";                       //Stack is set as unreferenced and valid
+										     //stack frame of the earlier process is  reused
 
 
 	//breakpoint;

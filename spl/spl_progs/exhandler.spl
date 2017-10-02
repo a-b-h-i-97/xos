@@ -1,0 +1,111 @@
+alias cause S0;
+alias vpage S1;
+alias ip_addr S2;
+alias pg_num S3;
+alias physicalnum S4;
+alias physicalSP S5;
+
+alias i S15;
+alias j S14;
+alias flag S13;
+
+cause = EFR % 10;		// Gets value of cause field (size 1 char)
+vpage = (EFR / 10) % 100;    // Gets value of BadVAddr 
+ip_addr = (EFR/1000);
+physicalnum = [PTBR + 2*vpage];
+
+if (cause != 0) then   // Jump to exit handler
+	inline "JMP 11776";
+endif;
+
+if (physicalnum == -1) then
+	print "ERROR : SF";
+	inline "JMP 11776";
+endif;
+
+
+pg_num = -1;
+i = 25;
+
+while (i < 64) do
+	if([MEM_LIST + i] == 0) then
+		pg_num = i;
+		break;
+	endif;
+	i = i + 1;
+endwhile;
+
+if (pg_num == -1) then                                      //No free page in memory
+
+	
+	i = PTBR + 2*vpage + 2;                                // set i to address of next page
+
+	while (1) do
+
+		if ([i+1] == "01" || [i+1] == "11") then               // if in memory page
+	
+			if([i+1] == "11") then
+				[i+1] = "01";
+			else
+				if([MEM_LIST + [i]] < 2) then                  //if not a shared page, swap
+					
+					j = 448;
+					flag = 0;
+					while(j < 512) do
+						if ([DISK_LIST + j] == 0) then
+							flag = j;
+							break;
+						endif;
+						i = i+1;
+					endwhile;
+	
+					if(flag == 0) then
+						print "Out of memory";
+						inline "JMP 11776";
+					endif;
+	
+					store ([i],j);                             //moving page out
+					[DISK_LIST + j] = [DISK_LIST + j] + 1;     //incrementing DISK_LIST 
+					
+					pg_num = [i];                               //stoing pg in a register
+					[i] = j;                                   //updating page tables of victim page
+					[i + 1] = "00";
+	
+					break;
+				endif;
+			endif;
+		endif;
+	
+		i = i + 2;
+		if(i >= 1280) then
+			i = 1024;
+		endif;
+
+	endwhile;
+	
+endif;
+
+store (6,20);                     //committing back DF list
+
+if (physicalnum < 448) then
+
+	load (pg_num,physicalnum);
+else
+	load (pg_num,physicalnum);
+	[DISK_LIST + physicalnum] = [DISK_LIST + physicalnum] - 1;
+endif;
+
+store (6,20);                        //committing back DF list
+
+[PTBR + 2*vpage] = pg_num;
+[PTBR + 2*vpage + 1] = "11";
+
+SP = SP + 1;
+
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+[physicalSP] = ip_addr;
+
+ireturn;
+
+

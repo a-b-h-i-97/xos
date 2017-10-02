@@ -85,29 +85,32 @@ if(sysCallNo == 10) then
 
 
 
-	if ( [PTBR + 1] == "01" || [PTBR + 1] == "11" ) then
-		[PTBR + 1] = "00";
-		[MEM_LIST + [PTBR]] = 0;
-		[PTBR] = -1;
-	endif;
+	i = 0;
+	
+	while (i < 6) do                            // Freeing pages used by old process
 
-	if ( [PTBR + 3] == "01" || [PTBR + 3] == "11") then
-		[PTBR + 3] = "00";
-		[MEM_LIST + [PTBR + 2]] = 0;
-		[PTBR + 2] = -1;
-	endif;
+		j = i + 1;
 
-	if ( [PTBR + 5] == "01" || [PTBR + 5] == "11") then
-		[PTBR + 5] = "00";
-		[MEM_LIST + [PTBR + 4]] = 0;
-		[PTBR + 4] = -1;
-	endif;
+		if ([PTBR + j] == "01" || [PTBR + j] == "11") then            // if a valid page
+	
+			[MEM_LIST + [PTBR + i]] = [MEM_LIST + [PTBR + i]] - 1;     //decrementing MEM_LIST value
+	
+		else
+			if ([PTBR + i] >= 448) then                                    //if in swap area
+				[DISK_LIST + [PTBR + i]] = [DISK_LIST + [PTBR + i]] - 1;   //decrementing DISK_LIST value
+			endif;
 
-	if ( [PTBR + 7] == "01" || [PTBR + 7] == "11") then
-		[PTBR + 7] = "00";
-		[MEM_LIST + [PTBR + 6]] = 0;
-		[PTBR + 6] = -1;		
-	endif;
+		endif;
+
+		i = i + 2;
+
+	endwhile;
+
+	store (6,20);                               //committing back DF list
+
+	[MEM_LIST + [PTBR + 6]] = [MEM_LIST + [PTBR + 6]] - 1;    // freeing the stack page
+	[PTBR + 6] = -1;
+	[PTBR + 7] = "00";	
 
 	//breakpoint;
 

@@ -1,0 +1,116 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+alias sysCallNo S1;
+sysCallNo = [physicalSP - 1];
+
+alias arg2 S2;                   //new LSeek
+arg2 = [physicalSP - 3];
+
+alias arg1 S3;                   //file desc              
+arg1 = [physicalSP - 4];
+
+alias currentPID S4;
+currentPID = (PTBR - 1024) / 8;
+
+alias currentPCB S5;
+currentPCB = READY_LIST + 32 * currentPID;
+
+alias fat_ind S6;
+alias swoft_ind S7;
+
+alias file_size S8;
+
+alias Lpos S9;
+
+alias b_block S10;
+
+alias b_no S11;
+alias b_off S12;
+
+
+
+
+if(sysCallNo == 6) then
+	
+	if(arg1 < 0 || arg1 > 7) then
+		[physicalSP - 2] = -1;                  //invalid file_desc
+		print "invalid file_desc";
+		ireturn;
+	endif;
+
+	swoft_ind = [currentPCB + 15 + 2*arg1];
+
+	if(swoft_ind == -1) then
+		[physicalSP - 2] = -1;                  //invalid ppfte
+		print "invalid ppfte";
+		ireturn;
+	endif;
+
+	fat_ind = [FILE_TABLE + 2*swoft_ind];
+	file_size = [FAT + 8*fat_ind + 1];
+
+	if(arg2 < 0 || arg2 > file_size) then      //invalid LSEEK position
+		[physicalSP - 2] = -1;
+		ireturn;
+	endif;
+
+	[currentPCB + 16 + 2*arg1] = arg2;
+
+	[physicalSP - 2] = 0;
+	ireturn;
+
+endif;
+
+if(sysCallNo == 7) then
+
+	if(arg1 < 0 || arg1 > 7) then
+		[physicalSP - 2] = -1;                  //invalid file_desc
+		print "invalid file_desc";
+		ireturn;
+	endif;
+
+	swoft_ind = [currentPCB + 15 + 2*arg1];
+
+	if(swoft_ind == -1) then
+		[physicalSP - 2] = -1;                  //invalid ppfte
+		print "invalid ppfte";
+		ireturn;
+	endif;
+
+	fat_ind = [FILE_TABLE + 2*swoft_ind];
+	file_size = [FAT + 8*fat_ind + 1];
+	Lpos = [currentPCB + 16 + 2*arg1];
+
+	b_block = [FAT + 8*fat_ind + 2];
+
+	if(file_size == Lpos) then
+		[physicalSP - 2] = -1;                  //reached the end of file
+		ireturn;
+	endif;
+
+	load(1,b_block);
+
+	b_no = [SCRATCHPAD + Lpos/512];
+	b_off = Lpos%512;
+
+	load(1,b_no);
+	[physicalSP - 3] = [SCRATCHPAD + b_off];      // writing the result into argument 2
+
+
+	[currentPCB + 16 + 2*arg1] = Lpos + 1;
+
+	[physicalSP - 2] = 0;
+	ireturn;
+
+endif;
+
+
+
+
+
+
+
+
+
+	
