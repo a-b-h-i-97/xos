@@ -157,16 +157,17 @@ if( sysCallNo == 9) then
 
 endif;
 
+if (sysCallNo == 11) then
 
+	[physicalSP - 2] = currentPID;
+	ireturn;
 
+endif;
 
+if (sysCallNo == 12) then
 
+	[physicalSP - 2] = [currentPCB + 31];
+	ireturn;
 
-
-
-
-
-
-
-
+endif;
 

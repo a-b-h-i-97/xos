@@ -16,6 +16,9 @@ alias newPCB S5;
 
 alias swoft_ind S6;
 
+alias waitingPID S7;
+
+
 alias i S15;
 
 
@@ -26,7 +29,53 @@ alias flag S13;
 flag = 0;
 
 
-if(sysCallNo == 10) then
+if (sysCallNo == 14) then
+	
+	i =0;
+
+	while (i < 32) do
+		if([READY_LIST + 32*i + 1] == currPID + 100) then
+			[READY_LIST + 32*i + 1] = 1;
+		endif;
+
+		i = i+1;
+	endwhile;
+
+	[physicalSP - 2] = 0;
+	ireturn;
+
+endif;
+
+
+if (sysCallNo == 13) then
+	
+	waitingPID = [physicalSP - 3];
+	i = [READY_LIST + 32 * waitingPID + 1];
+	if (i == 2 || i == 0) then
+		[physicalSP - 2] = -1;
+		ireturn;
+	endif;
+
+	[ currPCB + 1 ] = 100 + waitingPID;
+	[ currPCB + 2 ] = BP;
+	[ currPCB + 3 ] = SP - 1;
+	[ currPCB + 4 ] = [ physicalSP ]; 
+
+	[ currPCB + 5 ] = PTBR;
+	[ currPCB + 6 ] = PTLR;
+	
+	[ currPCB + 7 ] = R0; 
+	[ currPCB + 8 ] = R1; 
+	[ currPCB + 9 ] = R2; 
+	[ currPCB + 10 ] = R3; 
+	[ currPCB + 11 ] = R4; 
+	[ currPCB + 12 ] = R5; 
+	[ currPCB + 13 ] = R6; 
+	[ currPCB + 14 ] = R7;
+
+endif;
+
+
 
 	newPID = currPID;
 	i = 0;
@@ -55,6 +104,8 @@ if(sysCallNo == 10) then
 		halt;
 	endif;
 
+
+if (sysCallNo == 10) then
 
  	i = 0;
 
@@ -112,6 +163,9 @@ if(sysCallNo == 10) then
 	[PTBR + 6] = -1;
 	[PTBR + 7] = "00";	
 
+
+endif;
+
 	//breakpoint;
 
 
@@ -142,6 +196,7 @@ if(sysCallNo == 10) then
 	
 	ireturn;
 
-endif;
+
+
 
 

@@ -89,6 +89,7 @@ endwhile;
 
 
 [READY_LIST + 0] = 0;     // PID for init is zero
+[READY_LIST + 31] = 0;    //parent of init is 0
 
 PTBR = PAGE_TABLE;        //Setting up page tables for init
 PTLR = 4;
