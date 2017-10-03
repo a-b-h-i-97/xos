@@ -109,5 +109,4 @@ SP = 3*512;
 
 [25 * 512] = 0;          //Placing 0 in the top of the stack
 
-
 ireturn;

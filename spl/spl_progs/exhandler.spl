@@ -47,7 +47,7 @@ if (pg_num == -1) then                                      //No free page in me
 			if([i+1] == "11") then
 				[i+1] = "01";
 			else
-				if([MEM_LIST + [i]] < 2) then                  //if not a shared page, swap
+				if([MEM_LIST + [i]] < 2 && (i - PAGE_TABLE) % 8 != 6) then    //if not a shared page and not a stack, swap
 					
 					j = 448;
 					flag = 0;
@@ -56,7 +56,7 @@ if (pg_num == -1) then                                      //No free page in me
 							flag = j;
 							break;
 						endif;
-						i = i+1;
+						j = j+1;
 					endwhile;
 	
 					if(flag == 0) then
@@ -86,6 +86,7 @@ if (pg_num == -1) then                                      //No free page in me
 endif;
 
 store (6,20);                     //committing back DF list
+[MEM_LIST + pg_num] = 1;        //setting new page as used
 
 if (physicalnum < 448) then
 
@@ -105,6 +106,10 @@ SP = SP + 1;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
 
 [physicalSP] = ip_addr;
+
+//print "exexit";
+//breakpoint;
+
 
 ireturn;
 

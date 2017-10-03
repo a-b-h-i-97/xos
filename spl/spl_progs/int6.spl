@@ -24,6 +24,10 @@ currentPCB = READY_LIST + 32 * currentPID;
 
 alias i S15;
 
+//print "in exec";
+//print currentPID;
+//breakpoint;
+
 
 alias j S14;
 j = 0;
@@ -146,6 +150,7 @@ if( sysCallNo == 9) then
 
 	[physicalSP] = 0;
 
+	//print "exet";
 	//breakpoint;
 
 	ireturn;

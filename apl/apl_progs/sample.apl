@@ -7,6 +7,8 @@ integer main()
 	else
 		while(childpid != -1) do
 			print(childpid);
+			//breakpoint;
+
 		endwhile;
 	endif;
 
