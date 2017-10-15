@@ -29,7 +29,7 @@ alias flag S13;
 flag = 0;
 
 
-if (sysCallNo == 14) then
+if (sysCallNo == 14) then                 // For signal system call
 	
 	i =0;
 
@@ -47,7 +47,7 @@ if (sysCallNo == 14) then
 endif;
 
 
-if (sysCallNo == 13) then
+if (sysCallNo == 13) then               // wait system call
 	
 	waitingPID = [physicalSP - 3];
 	i = [READY_LIST + 32 * waitingPID + 1];
@@ -72,6 +72,21 @@ if (sysCallNo == 13) then
 	[ currPCB + 12 ] = R5; 
 	[ currPCB + 13 ] = R6; 
 	[ currPCB + 14 ] = R7;
+
+endif;
+
+
+if (sysCallNo == 10) then               // signal all the waiting processess if current process exits
+	
+	i =0;
+
+	while (i < 32) do
+		if([READY_LIST + 32*i + 1] == currPID + 100) then
+			[READY_LIST + 32*i + 1] = 1;
+		endif;
+
+		i = i+1;
+	endwhile;
 
 endif;
 

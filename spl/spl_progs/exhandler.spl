@@ -15,11 +15,17 @@ ip_addr = (EFR/1000);
 physicalnum = [PTBR + 2*vpage];
 
 if (cause != 0) then   // Jump to exit handler
+	physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[physicalSP + 1] = 10;    //system call number for exit
+	SP = SP + 2;
 	inline "JMP 11776";
 endif;
 
 if (physicalnum == -1) then
 	print "ERROR : SF";
+	physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[physicalSP + 1] = 10;    //system call number for exit
+	SP = SP + 2;
 	inline "JMP 11776";
 endif;
 
