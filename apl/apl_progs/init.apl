@@ -2,9 +2,11 @@ integer main()
 {
 	integer childpid, retval;
 	childpid = Fork();
+	
 	//breakpoint;
 	//print (childpid);
 	//breakpoint;
+	
 	if(childpid == -2) then
 		retval = Exec("sample.xsm");
 	else

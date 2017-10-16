@@ -16,6 +16,9 @@ alias currentPCB S6;
 
 alias currentStack S7;
 
+alias pg_num S8;
+
+
 
 //print "in fork";
 //print currentPID;
@@ -74,12 +77,12 @@ if(sysCallNo == 8) then
 
 
 	i = 25;
-	flag = -1;
+	pg_num = -1;
 
 	while(i < 64) do
 
 		if([MEM_LIST + i] == 0) then
-			flag = i;
+			pg_num = i;
 			break;		
 		endif;
 
@@ -87,14 +90,58 @@ if(sysCallNo == 8) then
 	endwhile;
 
 
-	if(flag == -1) then 
+	if(pg_num == -1) then                          // No free page, page replacement needed
 
-		[physicalSP - 2] = -1;                  //no free pages for child stack
-		print "stack error";
-		ireturn;
+		i = 1024;                                // set i to address of first page table entry
+
+		while (1) do
+	
+			if ([i+1] == "01" || [i+1] == "11") then               // if in memory page
+		
+				if([i+1] == "11") then
+					[i+1] = "01";
+				else
+					if([MEM_LIST + [i]] < 2 && (i - PAGE_TABLE) % 8 != 6) then  //if not a shared page and not a stack, swap
+						
+						j = 448;
+						flag = 0;
+						while(j < 512) do
+							if ([DISK_LIST + j] == 0) then
+								flag = j;
+								break;
+							endif;
+							j = j+1;
+						endwhile;
+		
+						if(flag == 0) then
+							print "Out memory";
+							[physicalSP + 1] = 10;    //system call number for exit
+							SP = SP + 2;
+							inline "JMP 11776";
+						endif;
+		
+						store ([i],j);                             //moving page out
+						[DISK_LIST + j] = [DISK_LIST + j] + 1;     //incrementing DISK_LIST 
+						
+						pg_num = [i];                               //storing page number in a register
+						[i] = j;                                   //updating page tables of victim page
+						[i + 1] = "00";
+		
+						break;
+					endif;
+				endif;
+			endif;
+		
+			i = i + 2;
+			if(i >= 1280) then
+				i = 1024;
+			endif;
+	
+		endwhile;
+
 	endif;
 
-
+	store (6,20);                     //committing back DF list
 	
 	childPTBR = PAGE_TABLE + 8 * PCBi;	
 	childPCB = READY_LIST + 32 * PCBi;	
@@ -104,16 +151,16 @@ if(sysCallNo == 8) then
 
 
 
-	[MEM_LIST + flag] = 1;                    //setting the new page as used
+	[MEM_LIST + pg_num] = 1;                    //setting the new page as used
 
 
 	i = 0;                                    //copying stack word by word
 	while (i < 512) do
-		[flag * 512 + i] = [currentStack * 512 + i];
+		[pg_num * 512 + i] = [currentStack * 512 + i];
 		i = i+1;
 	endwhile;
 
-	[childPTBR + 6] = flag;                   // Setting child page table for stack
+	[childPTBR + 6] = pg_num;                   // Setting child page table for stack
 	[childPTBR + 7] = "01";
 
 

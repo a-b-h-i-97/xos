@@ -66,7 +66,10 @@ if (pg_num == -1) then                                      //No free page in me
 					endwhile;
 	
 					if(flag == 0) then
-						print "Out of memory";
+						print "Out memory 2";
+						physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+						[physicalSP + 1] = 10;    //system call number for exit
+						SP = SP + 2;
 						inline "JMP 11776";
 					endif;
 	
