@@ -1,3 +1,6 @@
+define PAGE_TABLE 1536;
+define READY_LIST 31232;
+
 load (7,1);               //Loading the Exception handler
 load (8,2);
 
@@ -54,13 +57,19 @@ while (counter < 64) do
 	counter = counter + 1;
 endwhile;
 
+// New location for PCB for 48 processes
+
+[MEM_LIST + 61] = 1;
+[MEM_LIST + 62] = 1;
+[MEM_LIST + 63] = 1;
+
 
 
 // Setting all PCB states to 0
 
 counter = 0;
 
-while (counter < 32) do
+while (counter < 48) do
 	[READY_LIST + counter * 32 + 1] = 0;
 	counter = counter + 1;
 endwhile;

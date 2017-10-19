@@ -1,3 +1,6 @@
+define PAGE_TABLE 1536;
+define READY_LIST 31232;
+
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
 
@@ -8,7 +11,7 @@ alias arg1 S2;
 arg1 = [physicalSP - 3];
 
 alias currentPID S3;
-currentPID = (PTBR - 1024) / 8;
+currentPID = (PTBR - PAGE_TABLE) / 8;
 
 alias file S4;
 alias fat_ind S5;

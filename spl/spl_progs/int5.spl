@@ -1,3 +1,5 @@
+define PAGE_TABLE 1536;
+define READY_LIST 31232;
 
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
@@ -6,7 +8,7 @@ alias sysCallNo S1;
 sysCallNo = [physicalSP - 1];
 
 alias currentPID S2;
-currentPID = (PTBR - 1024) / 8;
+currentPID = (PTBR - PAGE_TABLE) / 8;
 
 alias PCBi S3;
 
@@ -49,7 +51,7 @@ if(sysCallNo == 8) then
 	PCBi = -1;
 	vpcount = 0;
 
-	while(i < 32) do
+	while(i < 48) do                                    // 48 process 
 		
 		if( [READY_LIST + i * 32 + 1] == 0) then
 		

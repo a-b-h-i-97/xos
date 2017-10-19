@@ -1,3 +1,5 @@
+define PAGE_TABLE 1536;
+define READY_LIST 31232;
 
 alias currPID S0;
 currPID = (PTBR - PAGE_TABLE) / 8;
@@ -43,7 +45,7 @@ newPID = currPID;
 
 while (1) do
 	newPID = newPID + 1;
-	if(newPID == 32) then
+	if(newPID == 48) then
 		newPID = 0;
 	endif;
 
