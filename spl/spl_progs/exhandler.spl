@@ -53,7 +53,7 @@ if (pg_num == -1) then                                      //No free page in me
 			if([i+1] == "11") then
 				[i+1] = "01";
 			else
-				if([MEM_LIST + [i]] < 2 && (i - PAGE_TABLE) % 8 != 6) then    //if not a shared page and not a stack, swap
+				if( [MEM_LIST + [i]] < 2 && (i != PTBR + 6) ) then    //if not a shared page and not a stack, swap
 					
 					j = 448;
 					flag = 0;
@@ -86,8 +86,8 @@ if (pg_num == -1) then                                      //No free page in me
 		endif;
 	
 		i = i + 2;
-		if(i >= 1280) then
-			i = 1024;
+		if(i >= (PAGE_TABLE + 256) ) then
+			i = PAGE_TABLE;
 		endif;
 
 	endwhile;

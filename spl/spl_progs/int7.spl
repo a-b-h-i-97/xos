@@ -28,6 +28,9 @@ j = 0;
 alias flag S13;
 flag = 0;
 
+alias currstack S12;
+currstack = [PTBR + 6];
+
 
 if (sysCallNo == 14) then                 // For signal system call
 	
@@ -182,6 +185,30 @@ if (sysCallNo == 10) then
 endif;
 
 	//breakpoint;
+
+	if ([ [newPCB + 5] + 7] == "00") then  //if new process stack not in memory swap with current process stack
+
+		load (1,[ [newPCB + 5] + 6]);
+		[DISK_LIST + [[newPCB + 5] + 6]] = 0;
+	
+		i = 0;
+		while ( i < 512) do
+	
+			[ currstack*512 + i] = [SCRATCHPAD + i];
+			i = i+1;
+	
+		endwhile;
+	
+		[PTBR + 6] = [[newPCB + 5] + 6];
+		[PTBR + 7] = "00";
+	
+		[[newPCB + 5] + 6] = currstack;
+		[[newPCB + 5] + 7] = "01";
+	
+		store (6,20);                               //committing back disk free list            
+	
+
+	endif;
 
 
 	R0 = [newPCB + 7];

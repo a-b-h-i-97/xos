@@ -6,12 +6,19 @@ currPID = (PTBR - PAGE_TABLE) / 8;
 alias currPCB S1;
 currPCB = READY_LIST + 32 * currPID;
 
+alias physicalSP S2;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); 
+
+alias i S15;
+alias currstack S14;
+
+currstack = [PTBR + 6];
+
 [ currPCB + 1 ] = 1; // Set STATE to READY
 [ currPCB + 2 ] = BP;
 [ currPCB + 3 ] = SP - 1;
 
-alias physicalSP S2;
-physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); 
+
 
 [ currPCB + 4 ] = [ physicalSP ]; 
 
@@ -46,6 +53,30 @@ while (1) do
 	endif;
 
 endwhile;
+
+if ([ [newPCB + 5] + 7] == "00") then            //if new process stack not in memory swap with current process stack
+
+	load (1,[ [newPCB + 5] + 6]);
+	store (currstack,[ [newPCB + 5] + 6]);
+
+	i = 0;
+	while ( i < 512) do
+
+		[ currstack*512 + i] = [SCRATCHPAD + i];
+		i = i+1;
+
+	endwhile;
+
+	[PTBR + 6] = [[newPCB + 5] + 6];
+	[PTBR + 7] = "00";
+
+	[[newPCB + 5] + 6] = currstack;
+	[[newPCB + 5] + 7] = "01";
+
+	store (6,20);                               //committing back disk free list            
+	
+
+endif;
 
 
 R0 = [newPCB + 7];
