@@ -156,7 +156,8 @@ if (sysCallNo == 10) then
 
 	endwhile;
 
-	//breakpoint;
+	print("EX1");
+	breakpoint;
 
 	[currPCB + 1] = 0;                             // current process is terminated
 
