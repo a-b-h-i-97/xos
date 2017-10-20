@@ -1,3 +1,5 @@
+define LTABLE 32256;                // 63rd page for LTABLE
+
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
 
@@ -91,8 +93,28 @@ if (sysCallNo == 2) then
 		ireturn;
 	endif;
 
+	i = 0;
+	flag = -1;
+	while (i < 256) do
+
+		if (LTABLE + 2*i == -1) then
+			flag = i;                         // flag stores LTABLE index
+			break;
+		endif;
+		i = i+1;
+	endwhile;
+
+	if (flag == -1) then
+		print "trouble";
+		breakpoint;
+	endif;
+
+
 	[currentPCB + 15 + 2*flag2] = swoft_ind;        //setting the per-process file table entry
-	[currentPCB + 16 + 2*flag2] = 0;
+	[currentPCB + 16 + 2*flag2] = flag;
+
+	[LTABLE + 2*flag] = 0;                          // setting up LTABLE values for the file pointer
+	[LTABLE + 2*flag + 1] = 1; 
 
 	i = FILE_TABLE + 2*swoft_ind + 1; 
 	[i] = [i] + 1;
@@ -126,7 +148,13 @@ if (sysCallNo == 3) then
 		[i - 1] = -1;
 	endif;
 
-	[swoft_ind] = -1;
+	[LTABLE + 2 * [swoft_ind + 1] + 1] = [LTABLE + 2 * [swoft_ind + 1] + 1] - 1;      //decrementing LTABLE count
+	
+	if ([LTABLE + 2 * [swoft_ind + 1] + 1] == 0) then            // if LTABLE count is zero invalidate
+		[LTABLE + 2 * [swoft_ind + 1] ] = -1;
+	endif;
+
+	[swoft_ind] = -1;                     //invalidate PPFTE
 	[swoft_ind + 1] = -1;
 
 	[physicalSP - 2] = 0;

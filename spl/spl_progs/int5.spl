@@ -1,3 +1,4 @@
+define LTABLE 32256;                // 63rd page for LTABLE
 
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
@@ -79,7 +80,7 @@ if(sysCallNo == 8) then
 	i = 25;
 	pg_num = -1;
 
-	while(i < 64) do
+	while(i < 63) do
 
 		if([MEM_LIST + i] == 0) then
 			pg_num = i;
@@ -223,6 +224,7 @@ if(sysCallNo == 8) then
 		if(j != -1) then
 
 			[FILE_TABLE + 2*j + 1] = [FILE_TABLE + 2*j + 1] + 1;        //incrementing file count
+			[LTABLE + 2 * [childPCB + 16 + 2*i] + 1 ] = [LTABLE + 2 * [childPCB + 16 + 2*i] + 1 ] + 1;
 
 		endif;
 

@@ -1,3 +1,5 @@
+define LTABLE 32256;                // 63rd page for LTABLE
+
 load (7,1);               //Loading the Exception handler
 load (8,2);
 
@@ -53,6 +55,20 @@ while (counter < 64) do
 	[MEM_LIST + counter] = 0;
 	counter = counter + 1;
 endwhile;
+
+// Setting up LTABLE
+
+[MEM_LIST + 63] = 1;
+
+counter = 0;
+while (counter < 256) do
+
+	[LTABLE + 2*counter] = -1;
+	[LTABLE + 2*counter + 1] = 0;
+
+	counter = counter+1;
+endwhile;
+
 
 
 

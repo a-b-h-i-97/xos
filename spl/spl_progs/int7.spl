@@ -1,3 +1,5 @@
+define LTABLE 32256;                // 63rd page for LTABLE
+
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
 
@@ -138,6 +140,12 @@ if (sysCallNo == 10) then
 
 			if ([j] == 0) then                     // if file open count is 0 entry is invalid
 				[j - 1] = -1;
+			endif;
+
+			[LTABLE + 2 * [swoft_ind + 1] + 1] = [LTABLE + 2 * [swoft_ind + 1] + 1] - 1;      //decrementing LTABLE count
+	
+			if ([LTABLE + 2 * [swoft_ind + 1] + 1] == 0) then            // if LTABLE count is zero invalidate
+				[LTABLE + 2 * [swoft_ind + 1] ] = -1;
 			endif;
 
 			[swoft_ind] = -1;
