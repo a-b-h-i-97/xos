@@ -135,7 +135,7 @@ if(sysCallNo == 8) then
 			endif;
 		
 			i = i + 2;
-			if(i >= PAGE_TABLE + 256) then
+			if(i >= PAGE_TABLE + 384) then
 				i = PAGE_TABLE;
 			endif;
 	

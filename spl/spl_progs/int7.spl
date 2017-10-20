@@ -204,6 +204,7 @@ endif;
 	
 		[PTBR + 6] = [[newPCB + 5] + 6];
 		[PTBR + 7] = "00";
+		[MEM_LIST + currstack] = 1;
 	
 		[[newPCB + 5] + 6] = currstack;
 		[[newPCB + 5] + 7] = "01";

@@ -89,7 +89,7 @@ if (pg_num == -1) then                                      //No free page in me
 		endif;
 	
 		i = i + 2;
-		if(i >= (PAGE_TABLE + 256) ) then
+		if(i >= (PAGE_TABLE + 384) ) then
 			i = PAGE_TABLE;
 		endif;
 
