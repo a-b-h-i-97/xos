@@ -172,7 +172,12 @@ endif;
 
 if (sysCallNo == 11) then
 
+	currentPID = (PTBR - 1024) / 8;
+	print "here";
+	breakpoint;
+
 	[physicalSP - 2] = currentPID;
+	
 	ireturn;
 
 endif;
